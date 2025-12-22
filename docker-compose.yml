@@ -1,39 +1,34 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16
     container_name: securespace-db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: ${DB_NAME}
+     TZ: Europe/Kyiv
+    PGTZ: Europe/Kyiv
+      POSTGRES_USER: securespace
+      POSTGRES_PASSWORD: securespace_pass
+      POSTGRES_DB: securespace
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U securespace -d securespace"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: securespace-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@local.test
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - db
-
   api:
     build: .
     container_name: securespace-api
-    env_file:
-      - .env
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: securespace
+      POSTGRES_PASSWORD: securespace_pass
+      POSTGRES_DB: securespace
     ports:
       - "3000:3000"
     depends_on:

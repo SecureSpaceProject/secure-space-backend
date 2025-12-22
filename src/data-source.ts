@@ -2,6 +2,7 @@ import "reflect-metadata";
 import path from "path";
 import { DataSource } from "typeorm";
 import * as entities from "./entities";
+import "dotenv/config";
 
 const db = new DataSource({
   type: "postgres",
@@ -16,7 +17,7 @@ const db = new DataSource({
   migrations: [path.join(__dirname, "migrations", "*.{ts,js}")],
 
   synchronize: false,
-  migrationsRun: true,
+  migrationsRun: false,
   logging: false,
 });
 
