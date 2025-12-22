@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js",
+    "start": "node build/app.js",
     "build:watch": "npm run clean && tsc -w",
     "start:watch": "nodemon --enable-source-maps --watch build build/index.js",
     "migration:generate": "node -r ts-node/register ./node_modules/typeorm/cli.js -d src/migration-entry.ts migration:generate src/migrations/%npm_config_name%",
@@ -12,14 +12,17 @@
     "migration:downgrade": "node -r ts-node/register ./node_modules/typeorm/cli.js -d src/migration-entry.ts migration:revert"
   },
   "dependencies": {
+    "express": "^5.2.1",
+    "joi": "^18.0.2",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "typeorm-ts-node-commonjs": "^0.3.20"
+    "typeorm-ts-node-commonjs": "^0.3.20",
+    "typescript": "^5.8.3"
   }
 }
