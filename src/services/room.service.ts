@@ -2,7 +2,7 @@ import db from "../data-source";
 import { Room } from "../entities/Room";
 import { RoomMember } from "../entities/RoomMember";
 import { RoomMemberRole } from "../entities/enums";
-import type { CreateRoomBody, RoomDto, UpdateRoomBody } from "../routes/room/types";
+import type { CreateRoomBody, RoomDto, UpdateRoomBody } from "../routes/rooms/types";
 
 type Ok<T> = { ok: true; data: T };
 type Fail = { ok: false; status: number; error: string };

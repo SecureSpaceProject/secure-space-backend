@@ -83,7 +83,7 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
 
 /**
  * @swagger
- * /room:
+ * /rooms:
  *   post:
  *     summary: Create a room
  *     description: Creates a new room. The creator becomes OWNER in room_members.
@@ -184,7 +184,7 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
 
 /**
  * @swagger
- * /room/{id}:
+ * /rooms/{id}:
  *   get:
  *     summary: Get room details
  *     description: Returns room details if the current user is a member of this room.

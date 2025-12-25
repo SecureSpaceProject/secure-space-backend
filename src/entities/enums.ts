@@ -3,6 +3,11 @@ export enum UserRole {
   ADMIN = "ADMIN",
 }
 
+export enum UserStatus {
+  ACTIVE = "ACTIVE",
+  BLOCKED = "BLOCKED",
+}
+
 export enum RoomMemberRole {
   OWNER = "OWNER",
   ADMIN = "ADMIN",

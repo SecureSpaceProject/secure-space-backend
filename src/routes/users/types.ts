@@ -7,6 +7,7 @@ export type MeDto = {
   email: string;
   role: string;
   createdAt: string; 
+  status: string;
 };
 
 export type UpdateMeBody = {

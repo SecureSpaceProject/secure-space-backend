@@ -5,25 +5,52 @@ import { updateMeSchema } from "./types";
 import type { GetMeRequest, MeResponse, UpdateMeRequest } from "./types";
 import type { NextFunction } from "express";
 
-
 const router = Router();
 const userService = new UserService();
+
+router.get("/me", async (req: GetMeRequest, res: MeResponse, next: NextFunction) => {
+  try {
+    const userId = res.locals.user?.id;
+    if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+
+    const dto = await userService.getMe(String(userId));
+    return res.json({ ok: true, data: dto });
+  } catch (e) {
+    return next(e);
+  }
+});
+
+router.patch(
+  "/me",
+  validate(updateMeSchema),
+  async (req: UpdateMeRequest, res: MeResponse, next: NextFunction) => {
+    try {
+      const userId = res.locals.user?.id;
+      if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+
+      const dto = await userService.updateMe(String(userId), req.body);
+      return res.json({ ok: true, data: dto });
+    } catch (e) {
+      return next(e);
+    }
+  }
+);
 
 /**
  * @swagger
  * tags:
- *   name: User
- *   description: User profile operations
+ *   - name: User
+ *     description: User profile operations
  */
 
 /**
  * @swagger
- * /me:
+ * /users/me:
  *   get:
  *     summary: Get current user profile
  *     description: |
  *       Returns information about the currently authenticated user.
- *       Authentication is simulated via `x-user-id` header.
+ *       Authentication is simulated via x-user-id header.
  *     tags: [User]
  *     parameters:
  *       - in: header
@@ -58,26 +85,18 @@ const userService = new UserService();
  *                     createdAt:
  *                       type: string
  *                       format: date-time
+ *                     status:
+ *                       type: string
+ *                       example: "ACTIVE"
  *       401:
  *         description: Unauthorized (missing x-user-id)
  *       404:
  *         description: User not found
  */
-router.get("/me", async (req: GetMeRequest, res: MeResponse, next: NextFunction) => {
-  try {
-    const userId = res.locals.user?.id;
-    if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
-
-    const dto = await userService.getMe(String(userId));
-    return res.json({ ok: true, data: dto });
-  } catch (e) {
-    return next(e);
-  }
-});
 
 /**
  * @swagger
- * /me:
+ * /users/me:
  *   patch:
  *     summary: Update current user profile
  *     description: |
@@ -125,6 +144,9 @@ router.get("/me", async (req: GetMeRequest, res: MeResponse, next: NextFunction)
  *                     createdAt:
  *                       type: string
  *                       format: date-time
+ *                    status:
+ *                    type: string
+ *                    example: "ACTIVE"
  *       400:
  *         description: Validation error
  *       401:
@@ -132,20 +154,5 @@ router.get("/me", async (req: GetMeRequest, res: MeResponse, next: NextFunction)
  *       404:
  *         description: User not found
  */
-router.patch(
-  "/me",
-  validate(updateMeSchema),
-  async (req: UpdateMeRequest, res: MeResponse, next: NextFunction) => {
-    try {
-      const userId = res.locals.user?.id;
-      if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
-
-      const dto = await userService.updateMe(String(userId), req.body);
-      return res.json({ ok: true, data: dto });
-    } catch (e) {
-      return next(e);
-    }
-  }
-);
 
 export default router;

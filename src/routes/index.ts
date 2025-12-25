@@ -1,10 +1,12 @@
 import { Router } from "express";
-import userRouter from "./user/user";
-import roomsRouter from "./room/room";
+import userRouter from "./users/users";
+import roomsRouter from "./rooms/rooms";
+import roomMembersRouter from "./roomMembers/roomMembers";
 
 const router = Router();
 
-router.use("/user", userRouter);
-router.use("/room", roomsRouter);
+router.use("/users", userRouter);
+router.use("/rooms", roomsRouter);
+router.use("/rooms", roomMembersRouter);
 
 export default router;

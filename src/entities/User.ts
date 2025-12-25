@@ -7,7 +7,7 @@ import {
   Index,
 } from "typeorm";
 
-import { UserRole } from "./enums";
+import { UserRole, UserStatus } from "./enums";
 import { RoomMember } from "./RoomMember";
 import { Notification } from "./Notification";
 import { Alert } from "./Alert";
@@ -27,6 +27,9 @@ export class User {
 
   @Column({ type: "enum", enum: UserRole, default: UserRole.USER })
   role!: UserRole;
+
+  @Column({ type: "enum", enum: UserStatus, default: UserStatus.ACTIVE })
+  status!: UserStatus;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;

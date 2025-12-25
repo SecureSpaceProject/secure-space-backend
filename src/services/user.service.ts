@@ -1,6 +1,6 @@
 import db from "../data-source";
 import { User } from "../entities/User";       
-import type { MeDto, UpdateMeBody } from "../routes/user/types";
+import type { MeDto, UpdateMeBody } from "../routes/users/types";
 
 export class UserService {
   private repo = db.getRepository(User);
@@ -13,6 +13,7 @@ export class UserService {
       email: String(anyU.email),
       role: String(anyU.role),
       createdAt: new Date(anyU.createdAt ?? anyU.created_at).toISOString(),
+      status: String(anyU.status),
     };
   }
 
