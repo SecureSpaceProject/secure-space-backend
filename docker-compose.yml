@@ -4,8 +4,8 @@ services:
     container_name: securespace-db
     restart: unless-stopped
     environment:
-     TZ: Europe/Kyiv
-    PGTZ: Europe/Kyiv
+      TZ: Europe/Kyiv
+      PGTZ: Europe/Kyiv
       POSTGRES_USER: securespace
       POSTGRES_PASSWORD: securespace_pass
       POSTGRES_DB: securespace
@@ -29,8 +29,11 @@ services:
       POSTGRES_USER: securespace
       POSTGRES_PASSWORD: securespace_pass
       POSTGRES_DB: securespace
+      POSTGRES_CONTAINER: securespace-db
     ports:
       - "3000:3000"
+    volumes:
+      - ./backups:/app/backups
     depends_on:
       db:
         condition: service_healthy

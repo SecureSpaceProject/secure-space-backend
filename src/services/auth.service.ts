@@ -76,6 +76,11 @@ export class AuthService {
       err.status = 401;
       throw err;
     }
+    if (String((user as any).status) === "BLOCKED") {
+      const err: any = new Error("User is blocked");
+      err.status = 403;
+      throw err;
+    }
 
     return {
       accessToken: this.signAccessToken(String(user.id), String(user.role)),

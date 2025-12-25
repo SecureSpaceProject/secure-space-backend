@@ -29,3 +29,6 @@ Thumbs.db
 
 # testing
 /coverage
+
+# others
+backups/

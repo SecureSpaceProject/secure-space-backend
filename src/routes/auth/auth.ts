@@ -70,7 +70,7 @@ router.post(
  *               email:
  *                 type: string
  *                 format: email
- *                 example: "test.user@gmail.com"
+ *                 example: "updated.user@gmail.com"
  *               password:
  *                 type: string
  *                 example: "123123"
