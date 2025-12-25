@@ -1,10 +1,10 @@
 import "reflect-metadata";
 import express from "express";
 import routes from "./routes";
-import mockAuth from "./middlewares/mockAuth";
 import db from "./data-source";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./swagger";
+import jwtAuth from "./middlewares/jwtAuth";
 
 export async function createApp() {
   if (!db.isInitialized) {
@@ -13,15 +13,16 @@ export async function createApp() {
 
   const app = express();
   app.use(express.json());
+
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  app.use(mockAuth);
+
+  app.use(jwtAuth);
 
   // routes
   app.use(routes);
 
   // health
   app.get("/health", (_req, res) => res.json({ ok: true }));
-
 
   app.use((err: any, _req: any, res: any, _next: any) => {
     const status = err?.status ?? 500;

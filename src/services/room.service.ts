@@ -1,8 +1,12 @@
-import db from "../data-source"; 
+import db from "../data-source";
 import { Room } from "../entities/Room";
 import { RoomMember } from "../entities/RoomMember";
 import { RoomMemberRole } from "../entities/enums";
-import type { CreateRoomBody, RoomDto, UpdateRoomBody } from "../routes/rooms/types";
+import type {
+  CreateRoomBody,
+  RoomDto,
+  UpdateRoomBody,
+} from "../routes/rooms/types";
 
 type Ok<T> = { ok: true; data: T };
 type Fail = { ok: false; status: number; error: string };
@@ -22,7 +26,10 @@ function isOwnerOrAdmin(role: RoomMemberRole): boolean {
 }
 
 export class RoomService {
-  static async createRoom(userId: string, body: CreateRoomBody): Promise<ServiceResult<RoomDto>> {
+  static async createRoom(
+    userId: string,
+    body: CreateRoomBody
+  ): Promise<ServiceResult<RoomDto>> {
     const roomRepo = db.getRepository(Room);
     const memberRepo = db.getRepository(RoomMember);
 
@@ -49,19 +56,28 @@ export class RoomService {
 
     const rooms = await roomRepo
       .createQueryBuilder("r")
-      .innerJoin(RoomMember, "rm", "rm.room_id = r.id AND rm.user_id = :userId", { userId })
+      .innerJoin(
+        RoomMember,
+        "rm",
+        "rm.room_id = r.id AND rm.user_id = :userId",
+        { userId }
+      )
       .orderBy("r.created_at", "DESC")
       .getMany();
 
     return { ok: true, data: rooms.map(toRoomDto) };
   }
 
-  static async getRoomById(userId: string, roomId: string): Promise<ServiceResult<RoomDto>> {
+  static async getRoomById(
+    userId: string,
+    roomId: string
+  ): Promise<ServiceResult<RoomDto>> {
     const roomRepo = db.getRepository(Room);
     const memberRepo = db.getRepository(RoomMember);
 
     const member = await memberRepo.findOne({ where: { roomId, userId } });
-    if (!member) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
+    if (!member)
+      return { ok: false, status: 403, error: "Forbidden (not a room member)" };
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
     if (!room) return { ok: false, status: 404, error: "Room not found" };
@@ -78,7 +94,8 @@ export class RoomService {
     const memberRepo = db.getRepository(RoomMember);
 
     const member = await memberRepo.findOne({ where: { roomId, userId } });
-    if (!member) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
+    if (!member)
+      return { ok: false, status: 403, error: "Forbidden (not a room member)" };
 
     if (!isOwnerOrAdmin(member.memberRole)) {
       return { ok: false, status: 403, error: "Forbidden (OWNER/ADMIN only)" };
@@ -95,12 +112,16 @@ export class RoomService {
     return { ok: true, data: toRoomDto(room) };
   }
 
-  static async deleteRoom(userId: string, roomId: string): Promise<ServiceResult<{ id: string }>> {
+  static async deleteRoom(
+    userId: string,
+    roomId: string
+  ): Promise<ServiceResult<{ id: string }>> {
     const roomRepo = db.getRepository(Room);
     const memberRepo = db.getRepository(RoomMember);
 
     const member = await memberRepo.findOne({ where: { roomId, userId } });
-    if (!member) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
+    if (!member)
+      return { ok: false, status: 403, error: "Forbidden (not a room member)" };
 
     if (member.memberRole !== RoomMemberRole.OWNER) {
       return { ok: false, status: 403, error: "Forbidden (OWNER only)" };

@@ -9,20 +9,14 @@ export const swaggerSpec = swaggerJSDoc({
       description:
         "API серверної частини системи безпеки житла (кімнати, датчики, події, алерти, сповіщення).",
     },
-    servers: [
-      { url: "http://localhost:3000", description: "Local" },
-    ],
+    servers: [{ url: "http://localhost:3000", description: "Local" }],
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
+        bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
       },
     },
+
     security: [{ bearerAuth: [] }],
   },
-
   apis: ["src/routes/**/*.ts"],
 });

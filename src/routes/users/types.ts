@@ -6,7 +6,7 @@ export type MeDto = {
   id: string;
   email: string;
   role: string;
-  createdAt: string; 
+  createdAt: string;
   status: string;
 };
 

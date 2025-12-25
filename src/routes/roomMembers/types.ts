@@ -12,16 +12,23 @@ export type RoomMemberDto = {
 
 export type AddRoomMemberBody = {
   userId: string;
-  memberRole: string; 
+  memberRole: string;
 };
 
 export type UpdateRoomMemberRoleBody = {
   memberRole: string;
 };
 
-export type AddRoomMemberRequest = Request<{ roomId: string }, unknown, AddRoomMemberBody>;
+export type AddRoomMemberRequest = Request<
+  { roomId: string },
+  unknown,
+  AddRoomMemberBody
+>;
 export type GetRoomMembersRequest = Request<{ roomId: string }>;
-export type DeleteRoomMemberRequest = Request<{ roomId: string; userId: string }>;
+export type DeleteRoomMemberRequest = Request<{
+  roomId: string;
+  userId: string;
+}>;
 export type UpdateRoomMemberRoleRequest = Request<
   { roomId: string; userId: string },
   unknown,

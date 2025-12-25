@@ -21,7 +21,11 @@ export type UpdateRoomBody = {
 export type CreateRoomRequest = Request<unknown, unknown, CreateRoomBody>;
 export type GetRoomsRequest = Request;
 export type GetRoomByIdRequest = Request<{ id: string }>;
-export type UpdateRoomRequest = Request<{ id: string }, unknown, UpdateRoomBody>;
+export type UpdateRoomRequest = Request<
+  { id: string },
+  unknown,
+  UpdateRoomBody
+>;
 export type DeleteRoomRequest = Request<{ id: string }>;
 
 export type RoomResponse = BaseResponse<RoomDto>;

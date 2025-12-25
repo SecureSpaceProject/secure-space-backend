@@ -8,17 +8,21 @@ import type { NextFunction } from "express";
 const router = Router();
 const userService = new UserService();
 
-router.get("/me", async (req: GetMeRequest, res: MeResponse, next: NextFunction) => {
-  try {
-    const userId = res.locals.user?.id;
-    if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+router.get(
+  "/me",
+  async (req: GetMeRequest, res: MeResponse, next: NextFunction) => {
+    try {
+      const userId = res.locals.user?.id;
+      if (!userId)
+        return res.status(401).json({ ok: false, error: "Unauthorized" });
 
-    const dto = await userService.getMe(String(userId));
-    return res.json({ ok: true, data: dto });
-  } catch (e) {
-    return next(e);
+      const dto = await userService.getMe(String(userId));
+      return res.json({ ok: true, data: dto });
+    } catch (e) {
+      return next(e);
+    }
   }
-});
+);
 
 router.patch(
   "/me",
@@ -26,7 +30,8 @@ router.patch(
   async (req: UpdateMeRequest, res: MeResponse, next: NextFunction) => {
     try {
       const userId = res.locals.user?.id;
-      if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+      if (!userId)
+        return res.status(401).json({ ok: false, error: "Unauthorized" });
 
       const dto = await userService.updateMe(String(userId), req.body);
       return res.json({ ok: true, data: dto });
@@ -50,15 +55,10 @@ router.patch(
  *     summary: Get current user profile
  *     description: |
  *       Returns information about the currently authenticated user.
- *       Authentication is simulated via x-user-id header.
+ *       Authentication is performed using JWT Bearer token.
  *     tags: [User]
- *     parameters:
- *       - in: header
- *         name: x-user-id
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID used for temporary authentication
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: User profile data
@@ -89,7 +89,7 @@ router.patch(
  *                       type: string
  *                       example: "ACTIVE"
  *       401:
- *         description: Unauthorized (missing x-user-id)
+ *         description: Unauthorized (missing/expired/invalid JWT)
  *       404:
  *         description: User not found
  */
@@ -102,14 +102,10 @@ router.patch(
  *     description: |
  *       Updates allowed fields of the current user's profile.
  *       Currently supports updating email only.
+ *       Authentication is performed using JWT Bearer token.
  *     tags: [User]
- *     parameters:
- *       - in: header
- *         name: x-user-id
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID used for temporary authentication
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -150,7 +146,7 @@ router.patch(
  *       400:
  *         description: Validation error
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (missing/expired/invalid JWT)
  *       404:
  *         description: User not found
  */

@@ -1,5 +1,5 @@
 import db from "../data-source";
-import { User } from "../entities/User";       
+import { User } from "../entities/User";
 import type { MeDto, UpdateMeBody } from "../routes/users/types";
 
 export class UserService {

@@ -12,64 +12,72 @@ import { RoomService } from "../../services/room.service";
 
 const router = Router();
 
-function getUserId(req: any, res: any): string {
-  const fromLocals = res.locals?.user?.id;
-  const fromHeader = req.header("x-user-id");
-  return (fromLocals || fromHeader || "").toString();
+function getUserId(_req: any, res: any): string {
+  return (res.locals?.user?.id || "").toString();
 }
 
 router.post("/", async (req: CreateRoomRequest, res) => {
   const userId = getUserId(req, res);
-  if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+  if (!userId)
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   const { error } = createRoomSchema.validate(req.body);
   if (error) return res.status(400).json({ ok: false, error: error.message });
 
   const result = await RoomService.createRoom(userId, req.body);
-  if (!result.ok) return res.status(result.status).json({ ok: false, error: result.error });
+  if (!result.ok)
+    return res.status(result.status).json({ ok: false, error: result.error });
 
   return res.status(201).json({ ok: true, data: result.data });
 });
 
 router.get("/", async (req: GetRoomsRequest, res) => {
   const userId = getUserId(req, res);
-  if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+  if (!userId)
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   const result = await RoomService.getMyRooms(userId);
-  if (!result.ok) return res.status(result.status).json({ ok: false, error: result.error });
+  if (!result.ok)
+    return res.status(result.status).json({ ok: false, error: result.error });
 
   return res.json({ ok: true, data: result.data });
 });
 
 router.get("/:id", async (req: GetRoomByIdRequest, res) => {
   const userId = getUserId(req, res);
-  if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+  if (!userId)
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   const result = await RoomService.getRoomById(userId, req.params.id);
-  if (!result.ok) return res.status(result.status).json({ ok: false, error: result.error });
+  if (!result.ok)
+    return res.status(result.status).json({ ok: false, error: result.error });
 
   return res.json({ ok: true, data: result.data });
 });
 
 router.patch("/:id", async (req: UpdateRoomRequest, res) => {
   const userId = getUserId(req, res);
-  if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+  if (!userId)
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   const { error } = updateRoomSchema.validate(req.body);
   if (error) return res.status(400).json({ ok: false, error: error.message });
 
   const result = await RoomService.updateRoom(userId, req.params.id, req.body);
-  if (!result.ok) return res.status(result.status).json({ ok: false, error: result.error });
+  if (!result.ok)
+    return res.status(result.status).json({ ok: false, error: result.error });
 
   return res.json({ ok: true, data: result.data });
 });
 
 router.delete("/:id", async (req: DeleteRoomRequest, res) => {
   const userId = getUserId(req, res);
-  if (!userId) return res.status(401).json({ ok: false, error: "Unauthorized" });
+  if (!userId)
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   const result = await RoomService.deleteRoom(userId, req.params.id);
-  if (!result.ok) return res.status(result.status).json({ ok: false, error: result.error });
+  if (!result.ok)
+    return res.status(result.status).json({ ok: false, error: result.error });
 
   return res.json({ ok: true, data: result.data });
 });
@@ -88,13 +96,8 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *     summary: Create a room
  *     description: Creates a new room. The creator becomes OWNER in room_members.
  *     tags: [Rooms]
- *     parameters:
- *       - in: header
- *         name: x-user-id
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID used for temporary authentication
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -137,19 +140,14 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *       400:
  *         description: Validation error
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (missing/expired/invalid JWT)
  *
  *   get:
  *     summary: Get my rooms
  *     description: Returns rooms where the current user is a member (room_members).
  *     tags: [Rooms]
- *     parameters:
- *       - in: header
- *         name: x-user-id
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID used for temporary authentication
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of rooms
@@ -179,7 +177,7 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *                         type: string
  *                         format: date-time
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (missing/expired/invalid JWT)
  */
 
 /**
@@ -189,13 +187,9 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *     summary: Get room details
  *     description: Returns room details if the current user is a member of this room.
  *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - in: header
- *         name: x-user-id
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID used for temporary authentication
  *       - in: path
  *         name: id
  *         required: true
@@ -226,7 +220,7 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *                       type: string
  *                       format: date-time
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (missing/expired/invalid JWT)
  *       403:
  *         description: Forbidden (not a room member)
  *       404:
@@ -236,13 +230,9 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *     summary: Update a room
  *     description: Updates room fields (name, isArmed). Allowed for OWNER/ADMIN only.
  *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - in: header
- *         name: x-user-id
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID used for temporary authentication
  *       - in: path
  *         name: id
  *         required: true
@@ -291,7 +281,7 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *       400:
  *         description: Validation error
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (missing/expired/invalid JWT)
  *       403:
  *         description: Forbidden (OWNER/ADMIN only or not a member)
  *       404:
@@ -301,13 +291,9 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *     summary: Delete a room
  *     description: Deletes the room. Allowed for OWNER only.
  *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - in: header
- *         name: x-user-id
- *         required: true
- *         schema:
- *           type: string
- *         description: User ID used for temporary authentication
  *       - in: path
  *         name: id
  *         required: true
@@ -332,12 +318,11 @@ router.delete("/:id", async (req: DeleteRoomRequest, res) => {
  *                       type: string
  *                       example: "2a4d2f0b-1a58-4a2b-9c60-2e4d8af8b1cc"
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (missing/expired/invalid JWT)
  *       403:
  *         description: Forbidden (OWNER only or not a member)
  *       404:
  *         description: Room not found
  */
-
 
 export default router;

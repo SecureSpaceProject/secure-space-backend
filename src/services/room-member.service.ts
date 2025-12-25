@@ -49,7 +49,6 @@ export class RoomMemberService {
     if (!actor) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
     if (!isOwnerOrAdmin(actor.memberRole)) return { ok: false, status: 403, error: "Forbidden (OWNER/ADMIN only)" };
 
-    // адмін не може видати ADMIN (і тим більше OWNER)
     if (actor.memberRole === RoomMemberRole.ADMIN) {
       if (body.memberRole !== RoomMemberRole.DEFAULT) {
         return { ok: false, status: 403, error: "Forbidden (ADMIN cannot grant ADMIN/OWNER)" };

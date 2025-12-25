@@ -1,8 +1,16 @@
 import "reflect-metadata";
 import path from "path";
 import { DataSource } from "typeorm";
-import * as entities from "./entities";
 import "dotenv/config";
+
+import { User } from "./entities/User";
+import { Room } from "./entities/Room";
+import { RoomMember } from "./entities/RoomMember";
+import { Sensor } from "./entities/Sensor";
+import { SensorEvent } from "./entities/SensorEvent";
+import { Alert } from "./entities/Alert";
+import { Notification } from "./entities/Notification";
+import { RoomActivityLog } from "./entities/RoomActivityLog";
 
 const db = new DataSource({
   type: "postgres",
@@ -12,7 +20,7 @@ const db = new DataSource({
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
 
-  entities: Object.values(entities),
+  entities: [User, Room, RoomMember, Sensor, SensorEvent, Alert, Notification, RoomActivityLog],
 
   migrations: [path.join(__dirname, "migrations", "*.{ts,js}")],
 
