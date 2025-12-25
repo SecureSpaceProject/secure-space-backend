@@ -3,6 +3,8 @@ import express from "express";
 import routes from "./routes";
 import mockAuth from "./middlewares/mockAuth";
 import db from "./data-source";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./swagger";
 
 export async function createApp() {
   if (!db.isInitialized) {
@@ -11,7 +13,7 @@ export async function createApp() {
 
   const app = express();
   app.use(express.json());
-
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.use(mockAuth);
 
   // routes

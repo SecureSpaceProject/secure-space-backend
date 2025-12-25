@@ -16,11 +16,14 @@
     "joi": "^18.0.2",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
+    "@types/swagger-ui-express": "^4.1.8",
     "ts-node": "^10.9.2",
     "typeorm-ts-node-commonjs": "^0.3.20",
     "typescript": "^5.8.3"
