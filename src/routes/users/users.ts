@@ -144,9 +144,9 @@ router.patch(
  *                     createdAt:
  *                       type: string
  *                       format: date-time
- *                    status:
- *                    type: string
- *                    example: "ACTIVE"
+ *                     status:
+ *                       type: string
+ *                       example: "ACTIVE"
  *       400:
  *         description: Validation error
  *       401:
