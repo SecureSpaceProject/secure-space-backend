@@ -10,6 +10,13 @@ import {
 } from "./types";
 import { RoomService } from "../../services/room.service";
 import { AppError } from "../../errors/AppError";
+import db from "../../data-source";
+import { RoomMember } from "../../entities/RoomMember";
+import { RoomMemberRole } from "../../entities/enums";
+import { Alert } from "../../entities/Alert";
+import { AlertStatus } from "../../entities/enums";
+import { requireAuth } from "../../middlewares/requireAuth";
+import { Sensor } from "../../entities/Sensor";
 
 const router = Router();
 
@@ -121,6 +128,150 @@ router.delete(
     }
   }
 );
+
+router.get("/:roomId/sensors", requireAuth, async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const userId = (req as any).user?.id as string;
+
+    const memberRepo = db.getRepository(RoomMember);
+    const sensorRepo = db.getRepository(Sensor);
+
+    const membership = await memberRepo.findOne({
+      where: { roomId, userId } as any,
+    });
+    if (!membership) {
+      return res.status(403).json({ ok: false, error: "NOT_A_ROOM_MEMBER" });
+    }
+
+    const sensors = await sensorRepo.find({
+      where: { roomId } as any,
+      order: { createdAt: "DESC" as any } as any,
+    });
+
+    return res.json({ ok: true, data: sensors });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post("/:roomId/alerts/close", requireAuth, async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const userId = (req as any).user?.id as string;
+
+    const memberRepo = db.getRepository(RoomMember);
+    const alertRepo = db.getRepository(Alert);
+
+    const membership = await memberRepo.findOne({
+      where: { roomId, userId } as any,
+    });
+    if (!membership) {
+      return res.status(403).json({ ok: false, error: "NOT_A_ROOM_MEMBER" });
+    }
+
+    const role = membership.memberRole;
+
+    if (role !== RoomMemberRole.OWNER && role !== RoomMemberRole.ADMIN) {
+      return res.status(403).json({ ok: false, error: "INSUFFICIENT_ROLE" });
+    }
+
+    const activeAlert = await alertRepo.findOne({
+      where: { roomId, status: AlertStatus.OPEN } as any,
+    });
+    if (!activeAlert) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "ACTIVE_ALERT_NOT_FOUND" });
+    }
+
+    activeAlert.status = AlertStatus.CLOSED;
+    activeAlert.closedAt = new Date();
+    activeAlert.closedByUserId = userId;
+
+    await alertRepo.save(activeAlert);
+
+    return res.json({ ok: true, data: activeAlert });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * @swagger
+ * /rooms/{roomId}/sensors:
+ *   get:
+ *     summary: Get all sensors in a room
+ *     description: Returns all sensors for a room. User must be a member of the room.
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Room ID
+ *     responses:
+ *       200:
+ *         description: List of sensors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: Unauthorized (missing/invalid JWT)
+ *       403:
+ *         description: Forbidden (not a room member)
+ */
+
+/**
+ * @swagger
+ * /rooms/{roomId}/alerts/close:
+ *   post:
+ *     summary: Close active alert in room (OWNER/ADMIN only)
+ *     description: Closes current OPEN alert in room. Only room OWNER or ADMIN can close.
+ *     tags: [Alerts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Room ID
+ *     responses:
+ *       200:
+ *         description: Alert closed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   description: Updated Alert entity
+ *       401:
+ *         description: Unauthorized (missing/invalid JWT)
+ *       403:
+ *         description: Forbidden (not a member or insufficient role)
+ *       404:
+ *         description: Active alert not found
+ */
+
 /**
  * @swagger
  * tags:
