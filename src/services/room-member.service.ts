@@ -9,6 +9,8 @@ import type {
   RoomMemberDto,
   UpdateRoomMemberRoleBody,
 } from "../routes/roomMembers/types";
+import { logRoomActivity } from "../roomActivityLogger";
+import { ActivityAction, ActivityTargetType } from "../entities/enums";
 
 type Ok<T> = { ok: true; data: T };
 type Fail = { ok: false; status: number; error: string };
@@ -72,6 +74,14 @@ export class RoomMemberService {
     });
 
     await memberRepo.save(newMember);
+    await logRoomActivity({
+      roomId,
+      actorUserId,
+      action: ActivityAction.ADD_MEMBER,
+      targetType: ActivityTargetType.ROOM_MEMBER,
+      targetId: newMember.id,
+    });
+
     return { ok: true, data: toDto(newMember) };
   }
 
@@ -138,6 +148,13 @@ export class RoomMemberService {
 
     target.memberRole = newRole;
     await memberRepo.save(target);
+    await logRoomActivity({
+      roomId,
+      actorUserId,
+      action: ActivityAction.UPDATE_MEMBER_ROLE,
+      targetType: ActivityTargetType.ROOM_MEMBER,
+      targetId: target.id,
+    });
 
     return { ok: true, data: toDto(target) };
   }
@@ -178,6 +195,14 @@ export class RoomMemberService {
     }
 
     await memberRepo.remove(target);
+    await logRoomActivity({
+      roomId,
+      actorUserId,
+      action: ActivityAction.REMOVE_MEMBER,
+      targetType: ActivityTargetType.ROOM_MEMBER,
+      targetId: target.id,
+    });
+
     return { ok: true, data: { userId: targetUserId } };
   }
 }

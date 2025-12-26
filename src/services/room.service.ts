@@ -8,6 +8,8 @@ import type {
   UpdateRoomBody,
 } from "../routes/rooms/types";
 import { AppError } from "../errors/AppError";
+import { logRoomActivity } from "../roomActivityLogger";
+import { ActivityAction, ActivityTargetType } from "../entities/enums";
 
 type Ok<T> = { ok: true; data: T };
 type Fail = { ok: false; status: number; error: string };
@@ -48,6 +50,13 @@ export class RoomService {
     });
 
     await memberRepo.save(member);
+    await logRoomActivity({
+      roomId: room.id,
+      actorUserId: userId,
+      action: ActivityAction.CREATE_ROOM,
+      targetType: ActivityTargetType.ROOM,
+      targetId: room.id,
+    });
 
     return { ok: true, data: toRoomDto(room) };
   }
@@ -110,11 +119,34 @@ export class RoomService {
     if (!room) {
       throw new AppError("ROOM_NOT_FOUND", 404);
     }
+    const prevName = room.name;
+    const prevArmed = room.isArmed;
 
     if (typeof body.name === "string") room.name = body.name;
     if (typeof body.isArmed === "boolean") room.isArmed = body.isArmed;
 
     await roomRepo.save(room);
+    if (typeof body.isArmed === "boolean" && body.isArmed !== prevArmed) {
+      await logRoomActivity({
+        roomId: room.id,
+        actorUserId: userId,
+        action: body.isArmed
+          ? ActivityAction.ARM_ROOM
+          : ActivityAction.DISARM_ROOM,
+        targetType: ActivityTargetType.ROOM,
+        targetId: room.id,
+      });
+    }
+
+    if (typeof body.name === "string" && body.name !== prevName) {
+      await logRoomActivity({
+        roomId: room.id,
+        actorUserId: userId,
+        action: ActivityAction.UPDATE_ROOM,
+        targetType: ActivityTargetType.ROOM,
+        targetId: room.id,
+      });
+    }
 
     return { ok: true, data: toRoomDto(room) };
   }

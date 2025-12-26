@@ -17,6 +17,8 @@ import { Alert } from "../../entities/Alert";
 import { AlertStatus } from "../../entities/enums";
 import { requireAuth } from "../../middlewares/requireAuth";
 import { Sensor } from "../../entities/Sensor";
+import { logRoomActivity } from "..//../roomActivityLogger";
+import { ActivityAction, ActivityTargetType } from "..//../entities/enums";
 
 const router = Router();
 
@@ -188,6 +190,13 @@ router.post("/:roomId/alerts/close", requireAuth, async (req, res, next) => {
     activeAlert.status = AlertStatus.CLOSED;
     activeAlert.closedAt = new Date();
     activeAlert.closedByUserId = userId;
+    await logRoomActivity({
+      roomId,
+      actorUserId: userId,
+      action: ActivityAction.CLOSE_ALERT,
+      targetType: ActivityTargetType.ALERT,
+      targetId: activeAlert.id,
+    });
 
     await alertRepo.save(activeAlert);
 

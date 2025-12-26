@@ -19,6 +19,8 @@ import {
   RoomMemberRole,
   AlertStatus,
 } from "..//../entities/enums";
+import { logRoomActivity } from "..//..//roomActivityLogger";
+import { ActivityAction, ActivityTargetType } from "..//../entities/enums";
 
 const router = Router();
 
@@ -113,6 +115,14 @@ router.post("/", requireAuth, async (req, res, next) => {
       isActive: true,
       deviceSecretHash,
     } as any);
+
+    await logRoomActivity({
+      roomId,
+      actorUserId: userId,
+      action: ActivityAction.ADD_SENSOR,
+      targetType: ActivityTargetType.SENSOR,
+      targetId: sensor.id,
+    });
 
     return res.json({ ok: true, data: { sensor, deviceSecret } });
   } catch (e) {
