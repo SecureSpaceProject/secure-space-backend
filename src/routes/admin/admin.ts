@@ -96,12 +96,12 @@ router.post(
  *                 data:
  *                   type: object
  *                   properties:
- *                     fileName:
+ *                     ok:
+ *                       type: boolean
+ *                       example: true
+ *                     file:
  *                       type: string
- *                       example: "backup_securespace_2025-12-25T15-20-10-123Z.sql"
- *                     filePath:
- *                       type: string
- *                       example: "C:\\project\\secure-space-backend\\backups\\backup_securespace_2025-12-25T15-20-10-123Z.sql"
+ *                       example: "backup-2025-12-25T19-31-46-210Z.sql"
  *       401:
  *         description: Unauthorized (missing/expired/invalid JWT)
  *       403:

@@ -1,6 +1,7 @@
 import db from "../data-source";
 import { User } from "../entities/User";
 import type { MeDto, UpdateMeBody } from "../routes/users/types";
+import { AppError } from "../errors/AppError";
 
 export class UserService {
   private repo = db.getRepository(User);
@@ -23,9 +24,7 @@ export class UserService {
     });
 
     if (!user) {
-      const err: any = new Error("User not found");
-      err.status = 404;
-      throw err;
+      throw new AppError("USER_NOT_FOUND", 404);
     }
 
     return this.toMeDto(user);
@@ -37,9 +36,7 @@ export class UserService {
     });
 
     if (!user) {
-      const err: any = new Error("User not found");
-      err.status = 404;
-      throw err;
+      throw new AppError("USER_NOT_FOUND", 404);
     }
 
     if (patch.email !== undefined) {

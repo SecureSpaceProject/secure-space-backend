@@ -4,6 +4,7 @@ import db from "../data-source";
 import { User } from "../entities/User";
 import type { Repository } from "typeorm";
 import type { MeDto as AuthUserDto } from "../routes/users/types";
+import { AppError } from "../errors/AppError";
 
 export class AuthService {
   private repo: Repository<User>;
@@ -24,7 +25,11 @@ export class AuthService {
 
   private signAccessToken(userId: string, role: string): string {
     const secret = process.env.JWT_ACCESS_SECRET;
-    if (!secret) throw new Error("JWT_ACCESS_SECRET is missing in .env");
+    if (!secret) {
+      throw new AppError("INTERNAL", 500, {
+        reason: "JWT_ACCESS_SECRET_MISSING",
+      });
+    }
 
     const expiresIn = (process.env.JWT_ACCESS_EXPIRES_IN ??
       "15m") as jwt.SignOptions["expiresIn"];
@@ -39,9 +44,10 @@ export class AuthService {
       where: { email: normalizedEmail },
     });
     if (existing) {
-      const err: any = new Error("Email already in use");
-      err.status = 409;
-      throw err;
+      throw new AppError("VALIDATION_FAILED", 409, {
+        field: "email",
+        reason: "ALREADY_IN_USE",
+      });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
@@ -65,21 +71,15 @@ export class AuthService {
 
     const user = await this.repo.findOne({ where: { email: normalizedEmail } });
     if (!user) {
-      const err: any = new Error("Invalid credentials");
-      err.status = 401;
-      throw err;
+      throw new AppError("INVALID_CREDENTIALS", 401);
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
-      const err: any = new Error("Invalid credentials");
-      err.status = 401;
-      throw err;
+      throw new AppError("INVALID_CREDENTIALS", 401);
     }
     if (String((user as any).status) === "BLOCKED") {
-      const err: any = new Error("User is blocked");
-      err.status = 403;
-      throw err;
+      throw new AppError("USER_BLOCKED", 403);
     }
 
     return {

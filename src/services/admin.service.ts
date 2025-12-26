@@ -3,6 +3,7 @@ import fs from "fs";
 import { spawn } from "child_process";
 import db from "../data-source";
 import { User } from "../entities/User";
+import { AppError } from "../errors/AppError";
 
 export class AdminService {
   private userRepo = db.getRepository(User);
@@ -40,9 +41,14 @@ export class AdminService {
     } = process.env;
 
     if (!POSTGRES_DB || !POSTGRES_USER || !POSTGRES_PASSWORD) {
-      throw new Error(
-        "POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD not set"
-      );
+      throw new AppError("BACKUP_FAILED", 500, {
+        reason: "ENV_NOT_SET",
+        missing: [
+          !POSTGRES_DB ? "POSTGRES_DB" : null,
+          !POSTGRES_USER ? "POSTGRES_USER" : null,
+          !POSTGRES_PASSWORD ? "POSTGRES_PASSWORD" : null,
+        ].filter(Boolean),
+      });
     }
 
     const container = POSTGRES_CONTAINER || "postgres";
@@ -60,7 +66,12 @@ export class AdminService {
       );
 
       dump.on("error", (err) => {
-        reject(new Error(`docker exec failed: ${err.message}`));
+        reject(
+          new AppError("BACKUP_FAILED", 500, {
+            reason: "DOCKER_EXEC_FAILED",
+            message: err.message,
+          })
+        );
       });
 
       const out = fs.createWriteStream(filePath);
@@ -74,7 +85,14 @@ export class AdminService {
           try {
             fs.unlinkSync(filePath);
           } catch {}
-          return reject(new Error(`pg_dump failed (code ${code}): ${errText}`));
+
+          return reject(
+            new AppError("BACKUP_FAILED", 500, {
+              reason: "PG_DUMP_FAILED",
+              code,
+              stderr: errText,
+            })
+          );
         }
         resolve();
       });

@@ -70,7 +70,7 @@ router.post(
  *               email:
  *                 type: string
  *                 format: email
- *                 example: "updated.user@gmail.com"
+ *                 example: updated.user@gmail.com
  *               password:
  *                 type: string
  *                 example: "123123"
@@ -92,10 +92,10 @@ router.post(
  *                       type: string
  *                     tokenType:
  *                       type: string
- *                       example: "Bearer"
+ *                       example: Bearer
  *                     expiresIn:
  *                       type: string
- *                       example: "15m"
+ *                       example: 15m
  *       401:
  *         description: Invalid credentials
  */
@@ -118,7 +118,7 @@ router.post(
  *               email:
  *                 type: string
  *                 format: email
- *                 example: "test.user@gmail.com"
+ *                 example: test.user@gmail.com
  *               password:
  *                 type: string
  *                 example: "123123"

@@ -4,6 +4,7 @@ import { UserService } from "../../services/user.service";
 import { updateMeSchema } from "./types";
 import type { GetMeRequest, MeResponse, UpdateMeRequest } from "./types";
 import type { NextFunction } from "express";
+import { AppError } from "../../errors/AppError";
 
 const router = Router();
 const userService = new UserService();
@@ -13,8 +14,7 @@ router.get(
   async (req: GetMeRequest, res: MeResponse, next: NextFunction) => {
     try {
       const userId = res.locals.user?.id;
-      if (!userId)
-        return res.status(401).json({ ok: false, error: "Unauthorized" });
+      if (!userId) throw new AppError("AUTH_REQUIRED", 401);
 
       const dto = await userService.getMe(String(userId));
       return res.json({ ok: true, data: dto });
@@ -30,8 +30,7 @@ router.patch(
   async (req: UpdateMeRequest, res: MeResponse, next: NextFunction) => {
     try {
       const userId = res.locals.user?.id;
-      if (!userId)
-        return res.status(401).json({ ok: false, error: "Unauthorized" });
+      if (!userId) return next(new AppError("AUTH_REQUIRED", 401));
 
       const dto = await userService.updateMe(String(userId), req.body);
       return res.json({ ok: true, data: dto });
@@ -40,7 +39,6 @@ router.patch(
     }
   }
 );
-
 /**
  * @swagger
  * tags:

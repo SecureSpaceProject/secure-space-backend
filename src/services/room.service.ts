@@ -7,6 +7,7 @@ import type {
   RoomDto,
   UpdateRoomBody,
 } from "../routes/rooms/types";
+import { AppError } from "../errors/AppError";
 
 type Ok<T> = { ok: true; data: T };
 type Fail = { ok: false; status: number; error: string };
@@ -76,11 +77,14 @@ export class RoomService {
     const memberRepo = db.getRepository(RoomMember);
 
     const member = await memberRepo.findOne({ where: { roomId, userId } });
-    if (!member)
-      return { ok: false, status: 403, error: "Forbidden (not a room member)" };
+    if (!member) {
+      throw new AppError("FORBIDDEN", 403);
+    }
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return { ok: false, status: 404, error: "Room not found" };
+    if (!room) {
+      throw new AppError("ROOM_NOT_FOUND", 404);
+    }
 
     return { ok: true, data: toRoomDto(room) };
   }
@@ -94,15 +98,18 @@ export class RoomService {
     const memberRepo = db.getRepository(RoomMember);
 
     const member = await memberRepo.findOne({ where: { roomId, userId } });
-    if (!member)
-      return { ok: false, status: 403, error: "Forbidden (not a room member)" };
+    if (!member) {
+      throw new AppError("FORBIDDEN", 403);
+    }
 
     if (!isOwnerOrAdmin(member.memberRole)) {
-      return { ok: false, status: 403, error: "Forbidden (OWNER/ADMIN only)" };
+      throw new AppError("FORBIDDEN", 403);
     }
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return { ok: false, status: 404, error: "Room not found" };
+    if (!room) {
+      throw new AppError("ROOM_NOT_FOUND", 404);
+    }
 
     if (typeof body.name === "string") room.name = body.name;
     if (typeof body.isArmed === "boolean") room.isArmed = body.isArmed;
@@ -120,15 +127,18 @@ export class RoomService {
     const memberRepo = db.getRepository(RoomMember);
 
     const member = await memberRepo.findOne({ where: { roomId, userId } });
-    if (!member)
-      return { ok: false, status: 403, error: "Forbidden (not a room member)" };
+    if (!member) {
+      throw new AppError("FORBIDDEN", 403);
+    }
 
     if (member.memberRole !== RoomMemberRole.OWNER) {
-      return { ok: false, status: 403, error: "Forbidden (OWNER only)" };
+      throw new AppError("FORBIDDEN", 403);
     }
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return { ok: false, status: 404, error: "Room not found" };
+    if (!room) {
+      throw new AppError("ROOM_NOT_FOUND", 404);
+    }
 
     await roomRepo.remove(room);
 

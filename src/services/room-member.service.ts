@@ -3,6 +3,7 @@ import { Room } from "../entities/Room";
 import { RoomMember } from "../entities/RoomMember";
 import { User } from "../entities/User";
 import { RoomMemberRole } from "../entities/enums";
+import { AppError } from "../errors/AppError";
 import type {
   AddRoomMemberBody,
   RoomMemberDto,
@@ -27,7 +28,6 @@ function isOwnerOrAdmin(role: RoomMemberRole): boolean {
   return role === RoomMemberRole.OWNER || role === RoomMemberRole.ADMIN;
 }
 
-// "DEFAULT" у тебе = звичайний учасник
 function isRegular(role: RoomMemberRole): boolean {
   return role === RoomMemberRole.DEFAULT;
 }
@@ -43,23 +43,27 @@ export class RoomMemberService {
     const memberRepo = db.getRepository(RoomMember);
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return { ok: false, status: 404, error: "Room not found" };
+    if (!room) throw new AppError("ROOM_NOT_FOUND", 404);
 
-    const actor = await memberRepo.findOne({ where: { roomId, userId: actorUserId } });
-    if (!actor) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
-    if (!isOwnerOrAdmin(actor.memberRole)) return { ok: false, status: 403, error: "Forbidden (OWNER/ADMIN only)" };
+    const actor = await memberRepo.findOne({
+      where: { roomId, userId: actorUserId },
+    });
+    if (!actor) throw new AppError("FORBIDDEN", 403);
+    if (!isOwnerOrAdmin(actor.memberRole)) throw new AppError("FORBIDDEN", 403);
 
     if (actor.memberRole === RoomMemberRole.ADMIN) {
       if (body.memberRole !== RoomMemberRole.DEFAULT) {
-        return { ok: false, status: 403, error: "Forbidden (ADMIN cannot grant ADMIN/OWNER)" };
+        throw new AppError("FORBIDDEN", 403);
       }
     }
 
     const targetUser = await userRepo.findOne({ where: { id: body.userId } });
-    if (!targetUser) return { ok: false, status: 404, error: "User not found" };
+    if (!targetUser) throw new AppError("USER_NOT_FOUND", 404);
 
-    const exists = await memberRepo.findOne({ where: { roomId, userId: body.userId } });
-    if (exists) return { ok: false, status: 409, error: "User already in room" };
+    const exists = await memberRepo.findOne({
+      where: { roomId, userId: body.userId },
+    });
+    if (exists) throw new AppError("VALIDATION_FAILED", 409);
 
     const newMember = memberRepo.create({
       roomId,
@@ -71,19 +75,24 @@ export class RoomMemberService {
     return { ok: true, data: toDto(newMember) };
   }
 
-  static async listMembers(actorUserId: string, roomId: string): Promise<ServiceResult<RoomMemberDto[]>> {
+  static async listMembers(
+    actorUserId: string,
+    roomId: string
+  ): Promise<ServiceResult<RoomMemberDto[]>> {
     const roomRepo = db.getRepository(Room);
     const memberRepo = db.getRepository(RoomMember);
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return { ok: false, status: 404, error: "Room not found" };
+    if (!room) throw new AppError("ROOM_NOT_FOUND", 404);
 
-    const actor = await memberRepo.findOne({ where: { roomId, userId: actorUserId } });
-    if (!actor) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
+    const actor = await memberRepo.findOne({
+      where: { roomId, userId: actorUserId },
+    });
+    if (!actor) throw new AppError("FORBIDDEN", 403);
 
     const members = await memberRepo.find({
       where: { roomId },
-      order: { addedAt: "ASC" as any }, // типи TypeORM інколи капризні
+      order: { addedAt: "ASC" as any },
     });
 
     return { ok: true, data: members.map(toDto) };
@@ -99,27 +108,32 @@ export class RoomMemberService {
     const memberRepo = db.getRepository(RoomMember);
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return { ok: false, status: 404, error: "Room not found" };
+    if (!room) throw new AppError("ROOM_NOT_FOUND", 404);
 
-    const actor = await memberRepo.findOne({ where: { roomId, userId: actorUserId } });
-    if (!actor) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
-    if (!isOwnerOrAdmin(actor.memberRole)) return { ok: false, status: 403, error: "Forbidden (OWNER/ADMIN only)" };
+    const actor = await memberRepo.findOne({
+      where: { roomId, userId: actorUserId },
+    });
+    if (!actor) throw new AppError("FORBIDDEN", 403);
+    if (!isOwnerOrAdmin(actor.memberRole)) throw new AppError("FORBIDDEN", 403);
 
-    const target = await memberRepo.findOne({ where: { roomId, userId: targetUserId } });
-    if (!target) return { ok: false, status: 404, error: "Member not found" };
+    const target = await memberRepo.findOne({
+      where: { roomId, userId: targetUserId },
+    });
+    if (!target) throw new AppError("NOT_FOUND", 404);
 
     const newRole = body.memberRole as RoomMemberRole;
 
-    // адмін не може видати ADMIN/OWNER
     if (actor.memberRole === RoomMemberRole.ADMIN) {
       if (!isRegular(newRole)) {
-        return { ok: false, status: 403, error: "Forbidden (ADMIN cannot grant ADMIN/OWNER)" };
+        throw new AppError("FORBIDDEN", 403);
       }
     }
 
-    // додатковий захист: ADMIN не може міняти роль OWNER
-    if (actor.memberRole === RoomMemberRole.ADMIN && target.memberRole === RoomMemberRole.OWNER) {
-      return { ok: false, status: 403, error: "Forbidden (ADMIN cannot modify OWNER)" };
+    if (
+      actor.memberRole === RoomMemberRole.ADMIN &&
+      target.memberRole === RoomMemberRole.OWNER
+    ) {
+      throw new AppError("FORBIDDEN", 403);
     }
 
     target.memberRole = newRole;
@@ -137,25 +151,30 @@ export class RoomMemberService {
     const memberRepo = db.getRepository(RoomMember);
 
     const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return { ok: false, status: 404, error: "Room not found" };
+    if (!room) throw new AppError("ROOM_NOT_FOUND", 404);
 
-    const actor = await memberRepo.findOne({ where: { roomId, userId: actorUserId } });
-    if (!actor) return { ok: false, status: 403, error: "Forbidden (not a room member)" };
-    if (!isOwnerOrAdmin(actor.memberRole)) return { ok: false, status: 403, error: "Forbidden (OWNER/ADMIN only)" };
+    const actor = await memberRepo.findOne({
+      where: { roomId, userId: actorUserId },
+    });
+    if (!actor) throw new AppError("FORBIDDEN", 403);
+    if (!isOwnerOrAdmin(actor.memberRole)) throw new AppError("FORBIDDEN", 403);
 
-    const target = await memberRepo.findOne({ where: { roomId, userId: targetUserId } });
-    if (!target) return { ok: false, status: 404, error: "Member not found" };
+    const target = await memberRepo.findOne({
+      where: { roomId, userId: targetUserId },
+    });
+    if (!target) throw new AppError("NOT_FOUND", 404);
 
-    // адмін не може видаляти OWNER/ADMIN (тільки звичайних)
     if (actor.memberRole === RoomMemberRole.ADMIN) {
       if (!isRegular(target.memberRole)) {
-        return { ok: false, status: 403, error: "Forbidden (ADMIN can remove DEFAULT only)" };
+        throw new AppError("FORBIDDEN", 403);
       }
     }
 
-    // owner/admin може видалити, але заборонимо видаляти OWNER не-овнером
-    if (target.memberRole === RoomMemberRole.OWNER && actor.memberRole !== RoomMemberRole.OWNER) {
-      return { ok: false, status: 403, error: "Forbidden (Only OWNER can remove OWNER)" };
+    if (
+      target.memberRole === RoomMemberRole.OWNER &&
+      actor.memberRole !== RoomMemberRole.OWNER
+    ) {
+      throw new AppError("FORBIDDEN", 403);
     }
 
     await memberRepo.remove(target);

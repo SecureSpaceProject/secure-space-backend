@@ -8,6 +8,8 @@ import {
   type UpdateRoomMemberRoleRequest,
 } from "./types";
 import { RoomMemberService } from "../../services/room-member.service";
+import type { NextFunction } from "express";
+import { AppError } from "../../errors/AppError";
 
 const router = Router({ mergeParams: true });
 
@@ -34,27 +36,28 @@ router.post("/:roomId/members", async (req: AddRoomMemberRequest, res) => {
   return res.status(201).json({ ok: true, data: result.data });
 });
 
-router.get("/:roomId/members", async (req: GetRoomMembersRequest, res) => {
-  const actorUserId = getUserId(req, res);
-  if (!actorUserId)
-    return res.status(401).json({ ok: false, error: "Unauthorized" });
+router.get(
+  "/:roomId/members",
+  async (req: GetRoomMembersRequest, res, next: NextFunction) => {
+    const actorUserId = getUserId(req, res);
+    if (!actorUserId) return next(new AppError("AUTH_REQUIRED", 401));
 
-  const result = await RoomMemberService.listMembers(
-    actorUserId,
-    req.params.roomId
-  );
-  if (!result.ok)
-    return res.status(result.status).json({ ok: false, error: result.error });
+    const result = await RoomMemberService.listMembers(
+      actorUserId,
+      req.params.roomId
+    );
+    if (!result.ok)
+      return res.status(result.status).json({ ok: false, error: result.error });
 
-  return res.json({ ok: true, data: result.data });
-});
+    return res.json({ ok: true, data: result.data });
+  }
+);
 
 router.patch(
   "/:roomId/members/:userId",
-  async (req: UpdateRoomMemberRoleRequest, res) => {
+  async (req: UpdateRoomMemberRoleRequest, res, next: NextFunction) => {
     const actorUserId = getUserId(req, res);
-    if (!actorUserId)
-      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    if (!actorUserId) return next(new AppError("AUTH_REQUIRED", 401));
 
     const { error } = updateRoomMemberRoleSchema.validate(req.body);
     if (error) return res.status(400).json({ ok: false, error: error.message });
