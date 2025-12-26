@@ -29,6 +29,9 @@ export class Sensor {
   @Column({ name: "is_active", default: true })
   isActive!: boolean;
 
+  @Column({ name: "device_secret_hash", nullable: true })
+  deviceSecretHash!: string;
+
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
 

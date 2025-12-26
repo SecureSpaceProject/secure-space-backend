@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from "typeorm";
-
+import { SensorType, SensorState } from "./enums";
 import { Room } from "./Room";
 import { Sensor } from "./Sensor";
 import { Alert } from "./Alert";
@@ -16,21 +16,17 @@ export class SensorEvent {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @Column({ name: "room_id" })
-  roomId!: string;
-
   @Column({ name: "sensor_id" })
   sensorId!: string;
 
-  @Column({ default: true })
-  triggered!: boolean;
+  @Column({ type: "enum", enum: SensorState, nullable: true })
+  state!: SensorState;
+
+  @Column({ type: "enum", enum: SensorType })
+  eventType!: SensorType;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
-
-  @ManyToOne(() => Room, (r) => r.events, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "room_id" })
-  room!: Room;
 
   @ManyToOne(() => Sensor, (s) => s.events, { onDelete: "CASCADE" })
   @JoinColumn({ name: "sensor_id" })

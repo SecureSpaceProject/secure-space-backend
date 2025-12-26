@@ -33,9 +33,6 @@ export class Room {
   @OneToMany(() => Sensor, (s) => s.room)
   sensors!: Sensor[];
 
-  @OneToMany(() => SensorEvent, (e) => e.room)
-  events!: SensorEvent[];
-
   @OneToMany(() => Alert, (a) => a.room)
   alerts!: Alert[];
 

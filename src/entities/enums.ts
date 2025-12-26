@@ -20,6 +20,11 @@ export enum SensorType {
   OPEN = "OPEN",
 }
 
+export enum SensorState {
+  OPEN = "OPEN",
+  CLOSED = "CLOSED",
+}
+
 export enum AlertStatus {
   OPEN = "OPEN",
   CLOSED = "CLOSED",
