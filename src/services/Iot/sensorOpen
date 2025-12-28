@@ -1,0 +1,78 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+const char* WIFI_SSID = "Wokwi-GUEST";
+const char* WIFI_PASS = "";
+
+String BASE_URL = "http://inga-gadgety-tomas.ngrok-free.dev"; // Replace with your backend URL
+String SENSOR_ID = "d4845744-c128-4344-ab94-a49aa0fdd929"; // Replace with your sensor ID
+String DEVICE_SECRET = "gQU2uMqnEQNvKqzj3pOY0sxbISWcE_wG"; // Replace with your device secret
+
+void connectWiFi() {
+  Serial.print("Connecting to WiFi");
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(300);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi connected");
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void sendDoorEvent(const String& state) {
+  String url = BASE_URL + "/iot/" + SENSOR_ID + "/events";
+
+  Serial.print("👉 Sending DOOR state: ");
+  Serial.println(state);
+
+  String body = String("{\"state\":\"") + state + "\"}";
+
+  HTTPClient http;
+  if (!http.begin(url)) {
+    Serial.println("❌ http.begin failed");
+    return;
+  }
+
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("X-Device-Secret", DEVICE_SECRET);
+
+  int code = http.POST(body);
+
+  Serial.print("HTTP ");
+  Serial.println(code);
+
+  if (code > 0) {
+    Serial.println(http.getString());
+  }
+
+  http.end();
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(300);
+
+  connectWiFi();
+
+  Serial.println("\n=== DOOR SENSOR READY ===");
+  Serial.println("Type:");
+  Serial.println("  o + Enter  -> OPEN");
+  Serial.println("  c + Enter  -> CLOSED");
+}
+
+
+void loop() {
+  if (Serial.available()) {
+    char cmd = Serial.read();
+
+    if (cmd == 'o' || cmd == 'O') {
+      sendDoorEvent("OPEN");
+    } 
+    else if (cmd == 'c' || cmd == 'C') {
+      sendDoorEvent("CLOSED");
+    }
+  }
+}
