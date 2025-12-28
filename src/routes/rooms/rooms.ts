@@ -14,6 +14,7 @@ import db from "../../data-source";
 import { RoomMember } from "../../entities/RoomMember";
 import { RoomMemberRole } from "../../entities/enums";
 import { Alert } from "../../entities/Alert";
+import { RoomActivityLog } from "../../entities/RoomActivityLog";
 import { AlertStatus } from "../../entities/enums";
 import { requireAuth } from "../../middlewares/requireAuth";
 import { Sensor } from "../../entities/Sensor";
@@ -201,6 +202,39 @@ router.post("/:roomId/alerts/close", requireAuth, async (req, res, next) => {
     await alertRepo.save(activeAlert);
 
     return res.json({ ok: true, data: activeAlert });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get("/:roomId/activity", requireAuth, async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const userId = (req as any).user?.id as string;
+
+    const memberRepo = db.getRepository(RoomMember);
+    const activityRepo = db.getRepository(RoomActivityLog);
+
+    const membership = await memberRepo.findOne({
+      where: { roomId, userId } as any,
+    });
+
+    if (!membership) {
+      return res.status(403).json({
+        ok: false,
+        error: "NOT_A_ROOM_MEMBER",
+      });
+    }
+
+    const logs = await activityRepo.find({
+      where: { roomId } as any,
+      order: { createdAt: "DESC" as any },
+    });
+
+    return res.json({
+      ok: true,
+      data: logs,
+    });
   } catch (e) {
     next(e);
   }
@@ -534,6 +568,28 @@ router.post("/:roomId/alerts/close", requireAuth, async (req, res, next) => {
  *         description: Forbidden (OWNER only or not a member)
  *       404:
  *         description: Room not found
+ */
+
+/**
+ * @swagger
+ * /rooms/{roomId}/activity:
+ *   get:
+ *     summary: Get room activity log
+ *     description: Returns all activity log records for a room. User must be a room member.
+ *     tags: [Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Activity log
+ *       403:
+ *         description: Not a room member
  */
 
 export default router;

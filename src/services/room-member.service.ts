@@ -11,6 +11,7 @@ import type {
 } from "../routes/roomMembers/types";
 import { logRoomActivity } from "../roomActivityLogger";
 import { ActivityAction, ActivityTargetType } from "../entities/enums";
+import { RoomActivityLog } from "../entities/RoomActivityLog";
 
 type Ok<T> = { ok: true; data: T };
 type Fail = { ok: false; status: number; error: string };
@@ -162,47 +163,74 @@ export class RoomMemberService {
   static async removeMember(
     actorUserId: string,
     roomId: string,
-    targetUserId: string
-  ): Promise<ServiceResult<{ userId: string }>> {
-    const roomRepo = db.getRepository(Room);
-    const memberRepo = db.getRepository(RoomMember);
+    userId: string
+  ) {
+    try {
+      const memberRepo = db.getRepository(RoomMember);
+      const roomRepo = db.getRepository(Room);
+      const activityRepo = db.getRepository(RoomActivityLog);
 
-    const room = await roomRepo.findOne({ where: { id: roomId } });
-    if (!room) throw new AppError("ROOM_NOT_FOUND", 404);
+      // 1. кімната
+      const room = await roomRepo.findOne({
+        where: { id: roomId },
+      });
 
-    const actor = await memberRepo.findOne({
-      where: { roomId, userId: actorUserId },
-    });
-    if (!actor) throw new AppError("FORBIDDEN", 403);
-    if (!isOwnerOrAdmin(actor.memberRole)) throw new AppError("FORBIDDEN", 403);
-
-    const target = await memberRepo.findOne({
-      where: { roomId, userId: targetUserId },
-    });
-    if (!target) throw new AppError("NOT_FOUND", 404);
-
-    if (actor.memberRole === RoomMemberRole.ADMIN) {
-      if (!isRegular(target.memberRole)) {
-        throw new AppError("FORBIDDEN", 403);
+      if (!room) {
+        return {
+          ok: false,
+          status: 404,
+          error: "ROOM_NOT_FOUND",
+        };
       }
+
+      // 2. мембер
+      const member = await memberRepo.findOne({
+        where: {
+          room: { id: roomId },
+          user: { id: userId },
+        },
+        relations: ["user"],
+      });
+
+      if (!member) {
+        return {
+          ok: false,
+          status: 404,
+          error: "MEMBER_NOT_FOUND",
+        };
+      }
+
+      // 3. зберігаємо ВСЕ що треба ДО remove
+      const removedMemberId = member.id;
+      const removedUserId = member.user.id;
+
+      // 4. видаляємо
+      await memberRepo.remove(member);
+
+      // 5. activity log — ТІЛЬКИ ENUM-и
+      await activityRepo.save({
+        room,
+        actorUserId,
+        action: ActivityAction.REMOVE_MEMBER,
+        targetType: ActivityTargetType.ROOM_MEMBER,
+        targetId: removedMemberId,
+      });
+
+      // 6. нормальна відповідь
+      return {
+        ok: true,
+        data: {
+          roomId,
+          userId: removedUserId,
+        },
+      };
+    } catch (error) {
+      console.error("removeMember failed:", error);
+      return {
+        ok: false,
+        status: 500,
+        error: "INTERNAL_ERROR",
+      };
     }
-
-    if (
-      target.memberRole === RoomMemberRole.OWNER &&
-      actor.memberRole !== RoomMemberRole.OWNER
-    ) {
-      throw new AppError("FORBIDDEN", 403);
-    }
-
-    await memberRepo.remove(target);
-    await logRoomActivity({
-      roomId,
-      actorUserId,
-      action: ActivityAction.REMOVE_MEMBER,
-      targetType: ActivityTargetType.ROOM_MEMBER,
-      targetId: target.id,
-    });
-
-    return { ok: true, data: { userId: targetUserId } };
   }
 }

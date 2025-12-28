@@ -11,7 +11,7 @@ const router = Router();
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
 router.use("/rooms", roomsRouter);
-router.use("/rooms", roomMembersRouter);
+router.use("/roommembers", roomMembersRouter);
 router.use("/admin", adminUsersRouter);
 router.use("/sensors", sensorsRouter);
 router.use("/iot", iotRouter);

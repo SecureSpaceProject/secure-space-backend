@@ -13,8 +13,10 @@ import { AppError } from "../../errors/AppError";
 
 const router = Router({ mergeParams: true });
 
-function getUserId(_req: any, res: any): string {
-  return (res.locals?.user?.id || "").toString();
+function getUserId(_req: any, res: any): string | null {
+  const id = res.locals?.user?.id;
+  if (id === undefined || id === null) return null;
+  return String(id);
 }
 
 router.post("/:roomId/members", async (req: AddRoomMemberRequest, res) => {
@@ -76,24 +78,26 @@ router.patch(
   }
 );
 
-router.delete(
-  "/:roomId/members/:userId",
-  async (req: DeleteRoomMemberRequest, res) => {
-    const actorUserId = getUserId(req, res);
-    if (!actorUserId)
-      return res.status(401).json({ ok: false, error: "Unauthorized" });
-
-    const result = await RoomMemberService.removeMember(
-      actorUserId,
-      req.params.roomId,
-      req.params.userId
-    );
-    if (!result.ok)
-      return res.status(result.status).json({ ok: false, error: result.error });
-
-    return res.json({ ok: true, data: result.data });
+router.delete("/:roomId/members/:userId", async (req, res, next) => {
+  const actorUserId = getUserId(req, res);
+  if (!actorUserId) {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
-);
+
+  const result = await RoomMemberService.removeMember(
+    actorUserId,
+    req.params.roomId,
+    req.params.userId
+  );
+
+  if (!result.ok) {
+    return res
+      .status(result.status ?? 500)
+      .json({ ok: false, error: result.error });
+  }
+
+  return res.json({ ok: true, data: result.data });
+});
 
 /**
  * @swagger
@@ -104,7 +108,7 @@ router.delete(
 
 /**
  * @swagger
- * /rooms/{roomId}/members:
+ * /roommembers/{roomId}/members:
  *   post:
  *     summary: Add a user to a room
  *     description: |
@@ -140,29 +144,6 @@ router.delete(
  *     responses:
  *       201:
  *         description: Member added successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     roomId:
- *                       type: string
- *                     userId:
- *                       type: string
- *                     memberRole:
- *                       type: string
- *                       example: "DEFAULT"
- *                     addedAt:
- *                       type: string
- *                       format: date-time
  *       400:
  *         description: Validation error
  *       401:
@@ -190,31 +171,6 @@ router.delete(
  *     responses:
  *       200:
  *         description: List of room members
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       roomId:
- *                         type: string
- *                       userId:
- *                         type: string
- *                       memberRole:
- *                         type: string
- *                         example: "DEFAULT"
- *                       addedAt:
- *                         type: string
- *                         format: date-time
  *       401:
  *         description: Unauthorized (missing/expired/invalid JWT)
  *       403:
@@ -225,7 +181,7 @@ router.delete(
 
 /**
  * @swagger
- * /rooms/{roomId}/members/{userId}:
+ * /roommembers/{roomId}/members/{userId}:
  *   patch:
  *     summary: Update member role
  *     description: |
@@ -264,28 +220,6 @@ router.delete(
  *     responses:
  *       200:
  *         description: Member role updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     roomId:
- *                       type: string
- *                     userId:
- *                       type: string
- *                     memberRole:
- *                       type: string
- *                     addedAt:
- *                       type: string
- *                       format: date-time
  *       400:
  *         description: Validation error
  *       401:
@@ -321,19 +255,6 @@ router.delete(
  *     responses:
  *       200:
  *         description: Member removed successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 ok:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     userId:
- *                       type: string
  *       401:
  *         description: Unauthorized (missing/expired/invalid JWT)
  *       403:

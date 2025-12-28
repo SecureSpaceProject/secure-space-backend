@@ -76,7 +76,7 @@ router.patch(
  *                       example: "11111111-1111-1111-1111-111111111111"
  *                     email:
  *                       type: string
- *                       example: "test.user@securespace.local"
+ *                       example: "test.user@gmail.com"
  *                     role:
  *                       type: string
  *                       example: "USER"
@@ -114,7 +114,7 @@ router.patch(
  *               email:
  *                 type: string
  *                 format: email
- *                 example: "updated.user@securespace.com"
+ *                 example: "updateduser@securespace.com"
  *     responses:
  *       200:
  *         description: Updated user profile
