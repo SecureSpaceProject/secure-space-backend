@@ -20,6 +20,7 @@ import { requireAuth } from "../../middlewares/requireAuth";
 import { Sensor } from "../../entities/Sensor";
 import { logRoomActivity } from "..//../roomActivityLogger";
 import { ActivityAction, ActivityTargetType } from "..//../entities/enums";
+import { SensorEvent } from "../../entities/SensorEvent";
 
 const router = Router();
 
@@ -38,7 +39,7 @@ router.post("/", async (req: CreateRoomRequest, res, next: NextFunction) => {
         new AppError("VALIDATION_FAILED", 400, {
           message: error.message,
           details: error.details,
-        })
+        }),
       );
     }
 
@@ -95,7 +96,7 @@ router.patch(
           new AppError("VALIDATION_FAILED", 400, {
             message: error.message,
             details: error.details,
-          })
+          }),
         );
       }
 
@@ -109,7 +110,7 @@ router.patch(
     } catch (e) {
       return next(e);
     }
-  }
+  },
 );
 
 router.delete(
@@ -129,7 +130,7 @@ router.delete(
     } catch (e) {
       return next(e);
     }
-  }
+  },
 );
 
 router.get("/:roomId/sensors", requireAuth, async (req, res, next) => {
@@ -153,6 +154,62 @@ router.get("/:roomId/sensors", requireAuth, async (req, res, next) => {
     });
 
     return res.json({ ok: true, data: sensors });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get("/:roomId/alerts", requireAuth, async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const userId = (req as any).user?.id as string;
+
+    const memberRepo = db.getRepository(RoomMember);
+    const alertRepo = db.getRepository(Alert);
+
+    const membership = await memberRepo.findOne({
+      where: { roomId, userId } as any,
+    });
+
+    if (!membership) {
+      return res.status(403).json({ ok: false, error: "NOT_A_ROOM_MEMBER" });
+    }
+
+    const alerts = await alertRepo.find({
+      where: { roomId } as any,
+      order: { createdAt: "DESC" as any } as any,
+    });
+
+    return res.json({ ok: true, data: alerts });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get("/:roomId/sensor-events", requireAuth, async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const userId = (req as any).user?.id as string;
+
+    const memberRepo = db.getRepository(RoomMember);
+    const eventRepo = db.getRepository(SensorEvent);
+
+    const membership = await memberRepo.findOne({
+      where: { roomId, userId } as any,
+    });
+
+    if (!membership) {
+      return res.status(403).json({ ok: false, error: "NOT_A_ROOM_MEMBER" });
+    }
+
+    const events = await eventRepo
+      .createQueryBuilder("event")
+      .innerJoin(Sensor, "sensor", "sensor.id = event.sensor_id")
+      .where("sensor.room_id = :roomId", { roomId })
+      .orderBy("event.created_at", "DESC")
+      .getMany();
+
+    return res.json({ ok: true, data: events });
   } catch (e) {
     next(e);
   }
