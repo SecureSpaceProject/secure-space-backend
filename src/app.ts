@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import express from "express";
+import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 
 import routes from "./routes";
@@ -16,6 +17,20 @@ export async function createApp() {
   }
 
   const app = express();
+
+  app.use((req, res, next) => {
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+  });
+
+  app.use(
+    cors({
+      origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+      methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Lang"],
+    }),
+  );
+
   app.use(express.json());
 
   app.use(
@@ -44,7 +59,7 @@ export async function createApp() {
           return req;
         },
       },
-    })
+    }),
   );
 
   app.use(jwtAuth);
@@ -53,7 +68,7 @@ export async function createApp() {
   app.use((err: any, req: any, res: any, _next: any) => {
     const lang = pickLang(
       req.headers["x-lang"] as string | undefined,
-      req.headers["accept-language"] as string | undefined
+      req.headers["accept-language"] as string | undefined,
     );
 
     if (err instanceof AppError) {
