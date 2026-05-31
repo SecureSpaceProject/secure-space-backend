@@ -11,7 +11,8 @@ export type RoomMemberDto = {
 };
 
 export type AddRoomMemberBody = {
-  userId: string;
+  userId?: string;
+  email?: string;
   memberRole: string;
 };
 
@@ -40,9 +41,12 @@ export type RoomMembersResponse = BaseResponse<RoomMemberDto[]>;
 export type DeleteMemberResponse = BaseResponse<{ userId: string }>;
 
 export const addRoomMemberSchema = Joi.object({
-  userId: Joi.string().uuid().required(),
-  memberRole: Joi.string().valid("DEFAULT", "ADMIN", "OWNER").required(),
-});
+  userId: Joi.string().uuid().optional(),
+  email: Joi.string().email().optional(),
+  memberRole: Joi.string()
+    .valid("OWNER", "ADMIN", "USER", "DEFAULT")
+    .required(),
+}).xor("userId", "email");
 
 export const updateRoomMemberRoleSchema = Joi.object({
   memberRole: Joi.string().valid("DEFAULT", "ADMIN", "OWNER").required(),

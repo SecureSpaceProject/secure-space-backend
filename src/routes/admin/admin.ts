@@ -17,7 +17,7 @@ router.get(
     } catch (e) {
       next(e);
     }
-  }
+  },
 );
 
 router.patch(
@@ -38,7 +38,7 @@ router.patch(
 
       const updated = await adminService.setUserStatus(
         id,
-        status as "ACTIVE" | "BLOCKED"
+        status as "ACTIVE" | "BLOCKED",
       );
       if (!updated)
         return res.status(404).json({ ok: false, error: "User not found" });
@@ -47,7 +47,7 @@ router.patch(
     } catch (e) {
       next(e);
     }
-  }
+  },
 );
 
 router.post(
@@ -61,7 +61,52 @@ router.post(
     } catch (e) {
       next(e);
     }
-  }
+  },
+);
+
+router.get(
+  "/export/users",
+  requireAuth,
+  requireRole("ADMIN"),
+  async (_req, res, next) => {
+    try {
+      const result = await adminService.exportUsers();
+      return res.json({ ok: true, data: result });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/import/users",
+  requireAuth,
+  requireRole("ADMIN"),
+  async (req, res, next) => {
+    try {
+      const rawUsers = Array.isArray(req.body)
+        ? req.body
+        : Array.isArray(req.body?.users)
+          ? req.body.users
+          : [];
+
+      if (rawUsers.length === 0) {
+        return res.status(400).json({
+          ok: false,
+          error: "File does not contain users with email and password",
+        });
+      }
+
+      const result = await adminService.importUsers(rawUsers);
+
+      return res.json({
+        ok: true,
+        data: result,
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
 );
 
 /**
