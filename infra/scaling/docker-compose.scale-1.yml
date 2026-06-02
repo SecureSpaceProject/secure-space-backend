@@ -1,0 +1,72 @@
+name: securespace-scale-1
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Kyiv
+      PGTZ: Europe/Kyiv
+      POSTGRES_USER: securespace
+      POSTGRES_PASSWORD: securespace_pass
+      POSTGRES_DB: securespace
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U securespace -d securespace"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: securespace
+      POSTGRES_PASSWORD: securespace_pass
+      POSTGRES_DB: securespace
+      POSTGRES_CONTAINER: db
+      JWT_ACCESS_SECRET: local_scaling_secret
+      JWT_ACCESS_EXPIRES_IN: 1d
+    command: npm run migration:upgrade
+    restart: "no"
+
+  api1:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      INSTANCE_NAME: api1
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: securespace
+      POSTGRES_PASSWORD: securespace_pass
+      POSTGRES_DB: securespace
+      POSTGRES_CONTAINER: db
+      JWT_ACCESS_SECRET: local_scaling_secret
+      JWT_ACCESS_EXPIRES_IN: 1d
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - api1
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx-1.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+
+volumes:
+  pgdata:

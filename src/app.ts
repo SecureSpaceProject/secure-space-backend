@@ -2,7 +2,7 @@ import "reflect-metadata";
 import express from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
-
+import os from "os";
 import routes from "./routes";
 import db from "./data-source";
 import { swaggerSpec } from "./swagger";
@@ -32,6 +32,40 @@ export async function createApp() {
   );
 
   app.use(express.json());
+
+  app.get("/health", (_req, res) => {
+    res.json({
+      ok: true,
+      service: "secure-space-backend",
+      instance: process.env.INSTANCE_NAME || os.hostname(),
+      uptime: process.uptime(),
+    });
+  });
+
+  app.get("/health/db", async (_req, res) => {
+    try {
+      const startedAt = Date.now();
+
+      const result = await db.query("SELECT 1 AS result");
+
+      res.json({
+        ok: true,
+        service: "secure-space-backend",
+        instance: process.env.INSTANCE_NAME || os.hostname(),
+        database: "connected",
+        queryResult: result[0],
+        responseTimeMs: Date.now() - startedAt,
+        uptime: process.uptime(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        service: "secure-space-backend",
+        instance: process.env.INSTANCE_NAME || os.hostname(),
+        database: "error",
+      });
+    }
+  });
 
   app.use(
     "/docs",
